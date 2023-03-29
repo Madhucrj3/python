@@ -68,7 +68,7 @@ const App = () => {
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>5 + 7</p>
+        <p></p>
       </header>
     </div>
   );
