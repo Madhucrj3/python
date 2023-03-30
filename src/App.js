@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 const App = () => {
+  const [resullt, setResullt] = useState([]);
   let input = [];
   function createStdin() {
     let inputIndex = 0;
@@ -16,51 +17,41 @@ const App = () => {
     }
     return stdin;
   }
-  const runScript = async (timeout) => {
+  const handleOutput = (msg) => {
+    console.log(msg);
+    setResullt((prevState) => [...prevState, msg]);
+  };
+  const runScript = async () => {
     const overallCode =
-      '{"code_content":"\\"count = 0\\\\nwhile (count <3):\\\\n    count = count + 1\\\\n    print(\\\\\\"Hello Geek\\\\\\")\\"","code_language":"PYTHON39","inputs":["\\"\\""]}';
+      //'{"code_content":"\\"i=1\\\\nwhile(i==1):\\\\n    print(i)\\\\n\\"","code_language":"PYTHON38_AIML","inputs":["\\"\\""]}';
 
+      '{"code_content":"\\"# Python code for implementation of Naive Recursive\\\\n# approach\\\\ndef isPalindrome(x):\\\\n\\\\treturn x == x[::-1]\\\\n\\\\n\\\\ndef minPalPartion(string, i, j):\\\\n\\\\tif i >= j or isPalindrome(string[i:j + 1]):\\\\n\\\\t\\\\treturn 0\\\\n\\\\tans = float(\'inf\')\\\\n\\\\tfor k in range(i, j):\\\\n\\\\t\\\\tcount = (\\\\n\\\\t\\\\t\\\\t1 + minPalPartion(string, i, k)\\\\n\\\\t\\\\t\\\\t+ minPalPartion(string, k + 1, j)\\\\n\\\\t\\\\t)\\\\n\\\\t\\\\tans = min(ans, count)\\\\n\\\\treturn ans\\\\n\\\\n\\\\ndef main():\\\\n\\\\tstring = \\\\\\"ababbbabbababa\\\\\\"\\\\n\\\\tprint(\\\\n\\\\t\\\\\\"Min cuts needed for Palindrome Partitioning is \\\\\\",\\\\n\\\\tminPalPartion(string, 0, len(string) - 1),\\\\n\\\\t)\\\\n\\\\nif __name__ == \\\\\\"__main__\\\\\\":\\\\n\\\\tmain()\\\\n\\\\n# This code is contributed by itsvinayak\\\\n\\"","code_language":"PYTHON38_AIML","inputs":["\\"\\""]}';
     const overallParseCode = JSON.parse(overallCode);
     const code_content = JSON.parse(overallParseCode.code_content);
-    //console.log(code_content);
+
     const code_input = JSON.parse(overallParseCode.inputs);
     if (code_input.length > 0) {
       const myArray = code_input.split("\n");
       input = myArray;
-      console.log(myArray);
     }
     const pyodide = await window.loadPyodide({
-      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.18.1/full/",
+      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.22.1/full/",
+      args: ["1", "2", "3"],
       stdin: createStdin(),
+      stdout: (msg) => handleOutput(msg),
+      stderr: (msg) => console.log(msg),
     });
-
-    let outputBuffer = "";
-    const printFunc = pyodide.globals.get("print");
-    pyodide.globals.set("print", function (text) {
-      outputBuffer += text + "\n";
-      printFunc(text);
-    });
-
-    let timer = setTimeout(() => {
-      console.log("hell");
-      pyodide.gilRelease();
-      throw new Error(" TIME LIMIT EXCEDED");
-    }, 0.00001);
     let result = "";
-    if (code_content.includes('if __name__ == "__main__":')) {
-      result = await pyodide.runPython(code_content + "\n" + "main()");
-      clearTimeout(timer);
-    } else {
-      result = await pyodide.runPython(code_content);
-      clearTimeout(timer);
+    try {
+      result = await pyodide.runPythonAsync(code_content);
+    } catch (error) {
+      console.log(error);
     }
-    console.log(outputBuffer);
-    console.log(result);
   };
 
   useEffect(() => {
     const run = async () => {
-      const out = await runScript(5000);
+      const out = await runScript();
     };
     run();
   }, []);
@@ -68,10 +59,9 @@ const App = () => {
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p></p>
+        {resullt}
       </header>
     </div>
   );
 };
-
 export default App;
